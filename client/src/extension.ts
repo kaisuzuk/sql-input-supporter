@@ -1,50 +1,42 @@
-/* --------------------------------------------------------------------------------------------
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for license information.
- * ------------------------------------------------------------------------------------------ */
-
 import * as path from 'path';
 import { workspace, ExtensionContext } from 'vscode';
 
-import {
-	LanguageClient,
-	LanguageClientOptions,
-	ServerOptions,
-	TransportKind
-} from 'vscode-languageclient/node';
+import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from "vscode-languageclient/lib/node/main";
+import * as dotenv from 'dotenv'
 
 let client: LanguageClient;
 
 export function activate(context: ExtensionContext) {
-	// The server is implemented in node
-	const serverModule = context.asAbsolutePath(
-		path.join('server', 'out', 'server.js')
-	);
+	dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+	// The debug options for the server
+	let serverCommand = process.env.SQL_LANGUAGE_SERVER_PATH;
+	let debugOptions = { env: { RUST_LOG: "trace" } };
 
 	// If the extension is launched in debug mode then the debug server options are used
 	// Otherwise the run options are used
-	const serverOptions: ServerOptions = {
-		run: { module: serverModule, transport: TransportKind.ipc },
+	let serverOptions: ServerOptions = {
+		run: { command: serverCommand },
 		debug: {
-			module: serverModule,
-			transport: TransportKind.ipc,
+			command: serverCommand,
+			args: [],
+			options: debugOptions
 		}
 	};
 
 	// Options to control the language client
-	const clientOptions: LanguageClientOptions = {
+	let clientOptions: LanguageClientOptions = {
 		// Register the server for plain text documents
-		documentSelector: [{ scheme: 'file', language: 'plaintext' }],
+		documentSelector: [{ scheme: 'file', language: 'sql' }],
 		synchronize: {
 			// Notify the server about file changes to '.clientrc files contained in the workspace
-			fileEvents: workspace.createFileSystemWatcher('**/.clientrc')
+			fileEvents: workspace.createFileSystemWatcher('*.clientrc')
 		}
 	};
 
 	// Create the language client and start the client.
 	client = new LanguageClient(
-		'languageServerExample',
-		'Language Server Example',
+		'sql-language-server',
+		'SQL Language Server',
 		serverOptions,
 		clientOptions
 	);
